@@ -17,8 +17,7 @@ while IFS= read -r -d '' file; do
             grep -Ein 'AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|aws_secret_access_key[[:space:]]*[:=]|(password|secret|api_key)[[:space:]]*[:=][[:space:]]*["\047]?[A-Za-z0-9_./+=-]{8,}' || true)
 
         if [[ -n "$matches" ]]; then
-            echo "BLOCKED: Secret-like pattern found in $file"
-            printf '%s\n' "$matches"
+            echo "BLOCKED: Secret-like pattern found in $file (matched content hidden)"
             BLOCKED=1
         fi
     fi

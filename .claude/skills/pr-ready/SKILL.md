@@ -43,10 +43,10 @@ List any relevant tests or manual checks that should be run.
 
 ### 4. Draft pull request
 
-**Title:**  
+**Title:**
 Provide a concise title based on the actual changes.
 
-**Description:**  
+**Description:**
 Summarize what changed, why it changed, and how it was checked. Clearly mark anything that has not yet been verified.
 
 ### 5. Human review
