@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+set -uo pipefail
+
+MAX_SIZE=$((1024 * 1024))
+BLOCKED=0
+
+echo "Running PR Ready pre-commit checks..."
+
+# Check staged changes for secret-like patterns
+while IFS= read -r -d '' file; do
+    added_lines=$(git diff --cached --no-ext-diff --unified=0 -- "$file" |
+        grep -E '^\+[^+]' || true)
+
+    if [[ -n "$added_lines" ]]; then
+        matches=$(printf '%s\n' "$added_lines" |
+            grep -Ein 'AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|aws_secret_access_key[[:space:]]*[:=]|(password|secret|api_key)[[:space:]]*[:=][[:space:]]*["\047]?[A-Za-z0-9_./+=-]{8,}' || true)
+
+        if [[ -n "$matches" ]]; then
+            echo "BLOCKED: Secret-like pattern found in $file"
+            printf '%s\n' "$matches"
+            BLOCKED=1
+        fi
+    fi
+
+    # Check the size of the staged version of each file
+    size=$(git cat-file -s ":$file" 2>/dev/null || echo 0)
+
+    if [[ "$size" =~ ^[0-9]+$ ]] && (( size > MAX_SIZE )); then
+        echo "BLOCKED: File exceeds 1 MB: $file ($size bytes)"
+        BLOCKED=1
+    fi
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+
+if (( BLOCKED )); then
+    echo "Commit rejected. Fix the issues and try again."
+    exit 1
+fi
+
+echo "PASS: No matching secret patterns or oversized staged files found."
+exit 0
